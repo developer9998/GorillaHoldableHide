@@ -75,29 +75,31 @@ internal class HiddenHoldableInstance : MonoBehaviour
 
     public void CheckState()
     {
-        bool clearSetState = false;
-
         bool moving = _transferrableObject.interpDt > 0;
         bool realGrabState = _transferrableObject.InHand();
         _returning = _returning || (!realGrabState && moving);
         bool grabState = _lastGrabState ? (realGrabState || !_returning || moving) : realGrabState;
 
-        if (_forceSetState || _lastGrabState != grabState)
+        if (_forceSetState)
         {
-            clearSetState = true;
+            _forceSetState = false;
+            SetVisibility(_sustainVisibility || _lastGrabState);
+            return;
+        }
+
+        if (_lastGrabState != grabState)
+        {
             _returning = false;
-            _sustainVisibility = false;
             _lastGrabState = grabState;
             if (!_sustainVisibility) SetVisibility(grabState);
         }
 
-        if (_forceSetState || (_sustainVisibility && !_visibility))
+        if (_sustainVisibility && !_visibility)
         {
-            clearSetState = true;
             SetVisibility(true);
         }
 
-        if (clearSetState) _forceSetState = false;
+        _forceSetState = false;
     }
 
     public void SetVisibility(bool isVisible)
