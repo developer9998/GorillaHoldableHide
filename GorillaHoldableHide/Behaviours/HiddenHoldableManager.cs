@@ -43,7 +43,6 @@ internal class HiddenHoldableManager : MonoBehaviour
             if (element.Key.gameObject.activeSelf)
             {
                 element.Key.CheckState();
-                element.Key.CheckState(); // TODO: improve visibility logic so double call to prevent flashing is not neccessary
                 continue;
             }
 

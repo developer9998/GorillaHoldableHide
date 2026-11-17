@@ -28,7 +28,7 @@ internal class HiddenHoldableInstance : MonoBehaviour
 
     private readonly Dictionary<GameObject, UnityLayer> _originalObjectLayer = [];
 
-    private bool _lastGrabState = false, _overrideLastState = false, _forceSetState = true;
+    private bool _lastGrabState = false, _forceSetState = true, _sustainVisibility = false, _visibility = true;
 
     private bool _returning;
 
@@ -75,23 +75,34 @@ internal class HiddenHoldableInstance : MonoBehaviour
 
     public void CheckState()
     {
+        bool clearSetState = false;
+
         bool moving = _transferrableObject.interpDt > 0;
         bool realGrabState = _transferrableObject.InHand();
         _returning = _returning || (!realGrabState && moving);
-        bool grabState = _overrideLastState ? realGrabState : ((_lastGrabState ? (realGrabState || !_returning || moving) : realGrabState) || !_playerFits || !_categoryFits);
+        bool grabState = _lastGrabState ? (realGrabState || !_returning || moving) : realGrabState;
 
         if (_forceSetState || _lastGrabState != grabState)
         {
-            _overrideLastState = false;
-            _forceSetState = false;
+            clearSetState = true;
             _returning = false;
+            _sustainVisibility = false;
             _lastGrabState = grabState;
-            SetVisibility(grabState);
+            if (!_sustainVisibility) SetVisibility(grabState);
         }
+
+        if (_forceSetState || (_sustainVisibility && !_visibility))
+        {
+            clearSetState = true;
+            SetVisibility(true);
+        }
+
+        if (clearSetState) _forceSetState = false;
     }
 
     public void SetVisibility(bool isVisible)
     {
+        _visibility = isVisible;
         _holdableObjects.ForEach(gameObject =>
         {
             UnityLayer layer = isVisible ? _originalObjectLayer[gameObject] : _hiddenLayer;
@@ -101,19 +112,10 @@ internal class HiddenHoldableInstance : MonoBehaviour
 
     private void Config_SettingChanged(object sender, SettingChangedEventArgs e) // parameters don't matter here
     {
-        bool playerFits = _playerFits;
-        bool categoryFits = _categoryFits;
-        var hiddenLayer = _hiddenLayer;
         _playerFits = (_isLocalPlayer ? Plugin.AffectLocal : Plugin.AffectOthers).Value;
         _categoryFits = _isArmCosmetic ? Plugin.RegisterArm.Value : (_isBackCosmetic ? Plugin.RegisterBack.Value : (_isChestCosmetic && Plugin.RegisterChest.Value));
         _hiddenLayer = Plugin.ShowThirdPerson.Value ? UnityLayer.MirrorOnly : UnityLayer.Bake;
-        bool different = playerFits != _playerFits || categoryFits != _categoryFits || hiddenLayer != _hiddenLayer;
-
-        _overrideLastState = _overrideLastState || !_playerFits || !_categoryFits;
-        if (different)
-        {
-            _returning = _returning || (different && _transferrableObject.interpDt <= 0 && !_transferrableObject.InHand());
-            _forceSetState = true;
-        }
+        _sustainVisibility = !_playerFits || !_categoryFits;
+        _forceSetState = true;
     }
 }
