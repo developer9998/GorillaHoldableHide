@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using GorillaHoldableHide.Models;
 using HarmonyLib;
 using System.Reflection;
 
@@ -14,7 +15,9 @@ internal class Plugin : BaseUnityPlugin
 
     public static new ConfigFile Config;
 
-    public static ConfigEntry<bool> AffectLocal, AffectOthers, RegisterArm, RegisterBack, RegisterChest, ShowThirdPerson;
+    public static ConfigEntry<bool> AffectLocal, AffectOthers;
+
+    public static ConfigEntry<HoldableVisibility> ArmVisibility, BackVisibility, ChestVisibility;
 
     public void Awake()
     {
@@ -23,10 +26,9 @@ internal class Plugin : BaseUnityPlugin
 
         AffectLocal = Config.Bind("Player", "Affect Local Player", true, "Whether holdables belonging to the local player are hidden");
         AffectOthers = Config.Bind("Player", "Affect Other Players", false, "Whether holdables belonging to other players are hidden");
-        RegisterArm = Config.Bind("Category", "Affect Arm Cosmetics", true, "Whether holdables that fit on the arm are hidden");
-        RegisterBack = Config.Bind("Category", "Affect Back Cosmetics", true, "Whether holdables that fit on the back are hidden");
-        RegisterChest = Config.Bind("Category", "Affect Chest Cosmetics", true, "Whether holdables that fit on the chest are hidden");
-        ShowThirdPerson = Config.Bind("Perspective", "Show Outside POV", false, "Whether holdables remain solely hidden through your point of view");
+        ArmVisibility = Config.Bind("Category", "Arm Visibility", HoldableVisibility.TPHidden, "The visibility of holdables bound to your arms");
+        BackVisibility = Config.Bind("Category", "Back Visibility", HoldableVisibility.TPHidden, "The visibility of holdables bound to your back");
+        ChestVisibility = Config.Bind("Category", "Chest Visibility", HoldableVisibility.Hidden, "The visibility of holdables bound to your chest");
 
         Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), Info.Metadata.GUID);
     }

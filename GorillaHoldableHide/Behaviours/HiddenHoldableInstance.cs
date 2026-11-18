@@ -1,4 +1,5 @@
 ﻿using BepInEx.Configuration;
+using GorillaHoldableHide.Models;
 using GorillaNetworking;
 using System.Collections.Generic;
 using System.Linq;
@@ -115,8 +116,16 @@ internal class HiddenHoldableInstance : MonoBehaviour
     private void Config_SettingChanged(object sender, SettingChangedEventArgs e) // parameters don't matter here
     {
         _playerFits = (_isLocalPlayer ? Plugin.AffectLocal : Plugin.AffectOthers).Value;
-        _categoryFits = _isArmCosmetic ? Plugin.RegisterArm.Value : (_isBackCosmetic ? Plugin.RegisterBack.Value : (_isChestCosmetic && Plugin.RegisterChest.Value));
-        _hiddenLayer = Plugin.ShowThirdPerson.Value ? UnityLayer.MirrorOnly : UnityLayer.Bake;
+        var config = _isArmCosmetic ? Plugin.ArmVisibility : (_isBackCosmetic ? Plugin.BackVisibility : (_isChestCosmetic ? Plugin.ChestVisibility : null));
+        var visibility = config.Value;
+        _hiddenLayer = visibility switch
+        {
+            HoldableVisibility.FPHidden => UnityLayer.MirrorOnly,
+            HoldableVisibility.TPHidden => UnityLayer.FirstPersonOnly,
+            HoldableVisibility.Hidden => UnityLayer.Bake,
+            _ => 0
+        };
+        _categoryFits = _hiddenLayer != 0;
         _sustainVisibility = !_playerFits || !_categoryFits;
         _forceSetState = true;
     }
